@@ -1,65 +1,211 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { z } from "zod";
+import { useMutation } from "@tanstack/react-query";
+import { calculateTargets } from "@/lib/api";
+import type { AthleteProfile, TrainingSession, MacroTargets } from "@/lib/types";
+import type React from "react";
 
-export default function Home() {
+const profileSchema = z.object({
+  sex: z.enum(["male", "female"]),
+  age: z.number().min(14).max(90),
+  heightCm: z.number().min(120).max(220),
+  weightKg: z.number().min(35).max(250),
+  goal: z.enum(["cut", "maintain", "bulk"]),
+  activityFactor: z.number().min(1.1).max(1.9)
+});
+
+const sessionSchema = z.object({
+  type: z.enum(["strength", "endurance", "mixed", "mobility"]),
+  durationMin: z.number().min(10).max(240),
+  intensity: z.enum(["low", "moderate", "high"]),
+  time: z.string()
+});
+
+export default function Page() {
+  const [profile, setProfile] = useState<AthleteProfile>({
+    sex: "male", age: 30, heightCm: 180, weightKg: 80, goal: "maintain", activityFactor: 1.5
+  });
+  const [sessions, setSessions] = useState<TrainingSession[]>([]);
+  const [time, setTime] = useState("17:30");
+  const [result, setResult] = useState<MacroTargets | null>(null);
+
+  const { mutate: calc, isPending } = useMutation({
+    mutationFn: calculateTargets,
+    onSuccess: (data) => setResult(data)
+  });
+
+  const onSexChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setProfile((p) => ({ ...p, sex: e.target.value as AthleteProfile["sex"] }));
+  const onGoalChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
+    setProfile((p) => ({ ...p, goal: e.target.value as AthleteProfile["goal"] }));
+  const onNum = (k: keyof Pick<AthleteProfile, "age" | "heightCm" | "weightKg" | "activityFactor">) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => setProfile((p) => ({ ...p, [k]: Number(e.target.value) } as AthleteProfile));
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="container py-8 md:py-10 space-y-8">
+      <header className="space-y-2">
+        <div className="flex items-center gap-3">
+          <span className="pill">MVP</span>
+          <span className="pill">Dark</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <h1 className="h1">Kriger — Kalori & Makro kalkulator</h1>
+        <p className="lead">Start med profil, legg til økter og beregn målene dine.</p>
+      </header>
+
+      {/* Profil + Økter grid */}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Profil */}
+        <div className="card">
+          <div className="card-body space-y-4">
+            <h2 className="h2">Profil</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col">
+                <span className="label">Kjønn</span>
+                <select className="select" value={profile.sex} onChange={onSexChange}>
+                  <option value="male">Mann</option>
+                  <option value="female">Kvinne</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col">
+                <span className="label">Alder</span>
+                <input className="input" type="number" value={profile.age} onChange={onNum("age")} />
+              </label>
+
+              <label className="flex flex-col">
+                <span className="label">Høyde (cm)</span>
+                <input className="input" type="number" value={profile.heightCm} onChange={onNum("heightCm")} />
+              </label>
+
+              <label className="flex flex-col">
+                <span className="label">Vekt (kg)</span>
+                <input className="input" type="number" value={profile.weightKg} onChange={onNum("weightKg")} />
+              </label>
+
+              <label className="flex flex-col">
+                <span className="label">Mål</span>
+                <select className="select" value={profile.goal} onChange={onGoalChange}>
+                  <option value="cut">Cut</option>
+                  <option value="maintain">Vedlikehold</option>
+                  <option value="bulk">Bulk</option>
+                </select>
+              </label>
+
+              <label className="flex flex-col">
+                <span className="label">Aktivitetsfaktor (jobb/NEAT)</span>
+                <input className="input" type="number" step="0.05" value={profile.activityFactor} onChange={onNum("activityFactor")} />
+              </label>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Økter */}
+        <div className="card">
+          <div className="card-body space-y-4">
+            <h2 className="h2">Dagens økter</h2>
+            <div className="grid md:grid-cols-5 gap-3">
+              <select className="select" id="type" defaultValue="strength">
+                <option value="strength">Styrke</option>
+                <option value="endurance">Kondisjon</option>
+                <option value="mixed">Mixed</option>
+                <option value="mobility">Mobility</option>
+              </select>
+              <input className="input" type="number" placeholder="Varighet (min)" id="dur" defaultValue={60} />
+              <select className="select" id="intensity" defaultValue="moderate">
+                <option value="low">Lav</option>
+                <option value="moderate">Moderat</option>
+                <option value="high">Høy</option>
+              </select>
+              <input
+                className="input"
+                type="time"
+                value={time}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTime(e.target.value)}
+              />
+              <button
+                className="btn"
+                onClick={() => {
+                  const type = (document.getElementById("type") as HTMLSelectElement).value as TrainingSession["type"];
+                  const durationMin = Number((document.getElementById("dur") as HTMLInputElement).value);
+                  const intensity = (document.getElementById("intensity") as HTMLSelectElement).value as TrainingSession["intensity"];
+                  const s = sessionSchema.safeParse({ type, durationMin, intensity, time });
+                  if (!s.success) { alert("Ugyldig økt"); return; }
+                  setSessions((prev) => [...prev, s.data]);
+                }}
+              >
+                Legg til økt
+              </button>
+            </div>
+
+            <ul className="list text-sm">
+              {sessions.length === 0 && <li className="py-3 text-[var(--color-muted)]">Ingen økter lagt til.</li>}
+              {sessions.map((s, i) => (
+                <li key={i} className="py-3 flex items-center justify-between">
+                  <span className="text-[var(--color-foreground)]">
+                    <span className="pill mr-2">{s.time}</span>
+                    <span className="k">{s.type}</span> — {s.durationMin} min — {s.intensity}
+                  </span>
+                  <button
+                    className="btn-ghost"
+                    onClick={() => setSessions((prev) => prev.filter((_, idx) => idx !== i))}
+                    title="Fjern"
+                  >
+                    Fjern
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Beregn + Resultat */}
+      <section className="section">
+        <div className="flex items-center gap-3">
+          <button
+            disabled={isPending}
+            className="btn"
+            onClick={() => {
+              const p = profileSchema.safeParse(profile);
+              if (!p.success) { alert("Ugyldig profil"); return; }
+              calc({ profile: p.data, sessions });
+            }}
+          >
+            {isPending ? "Beregner..." : "Beregn mål"}
+          </button>
+          <span className="text-xs text-[var(--color-muted)]">Kalkuler basert på dagens økter.</span>
+        </div>
+
+        {result && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="card">
+              <div className="card-body space-y-3">
+                <h3 className="h2">Dagsmål</h3>
+                <ul className="grid grid-cols-2 gap-3 text-sm">
+                  <li className="pill">Kcal <span className="k ml-2">{Math.round(result.kcal)}</span></li>
+                  <li className="pill">Protein <span className="k ml-2">{Math.round(result.proteinGr)} g</span></li>
+                  <li className="pill">Karbo <span className="k ml-2">{Math.round(result.carbsGr)} g</span></li>
+                  <li className="pill">Fett <span className="k ml-2">{Math.round(result.fatGr)} g</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-body space-y-3">
+                <h3 className="h2">Timing (prosent per måltid)</h3>
+                <ul className="list text-sm">
+                  {result.mealTiming.map((m, i) => (
+                    <li key={i} className="py-3">
+                      <span className="k">{m.label}</span>: Protein {m.proteinPct}% • Karb {m.carbsPct}% • Fett {m.fatPct}%
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

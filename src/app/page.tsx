@@ -1,10 +1,12 @@
 "use client";
-import { useState } from "react";
-import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
-import { calculateTargets } from "@/lib/api";
-import type { AthleteProfile, TrainingSession, MacroTargets } from "@/lib/types";
+import {useState} from "react";
+import {z} from "zod";
+import {useMutation} from "@tanstack/react-query";
+import {calculateTargets} from "@/lib/api";
+import type {AthleteProfile, TrainingSession, MacroTargets} from "@/lib/types";
 import type React from "react";
+import Image from "next/image";
+import DeleteButton from "@/components/DeleteButton";
 
 const profileSchema = z.object({
   sex: z.enum(["male", "female"]),
@@ -30,21 +32,34 @@ export default function Page() {
   const [time, setTime] = useState("17:30");
   const [result, setResult] = useState<MacroTargets | null>(null);
 
-  const { mutate: calc, isPending } = useMutation({
+  const {mutate: calc, isPending} = useMutation({
     mutationFn: calculateTargets,
     onSuccess: (data) => setResult(data)
   });
 
   const onSexChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
-    setProfile((p) => ({ ...p, sex: e.target.value as AthleteProfile["sex"] }));
+    setProfile((p) => ({...p, sex: e.target.value as AthleteProfile["sex"]}));
   const onGoalChange = (e: React.ChangeEvent<HTMLSelectElement>) =>
-    setProfile((p) => ({ ...p, goal: e.target.value as AthleteProfile["goal"] }));
+    setProfile((p) => ({...p, goal: e.target.value as AthleteProfile["goal"]}));
   const onNum = (k: keyof Pick<AthleteProfile, "age" | "heightCm" | "weightKg" | "activityFactor">) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => setProfile((p) => ({ ...p, [k]: Number(e.target.value) } as AthleteProfile));
+    (e: React.ChangeEvent<HTMLInputElement>) => setProfile((p) => ({
+      ...p,
+      [k]: Number(e.target.value)
+    } as AthleteProfile));
 
   return (
     <main className="container py-8 md:py-10 space-y-8">
       <header className="space-y-2">
+        <section
+          className="relative w-full h-48 md:h-64 rounded-[--radius-card] overflow-hidden  flex items-center justify-center">
+          <Image
+            src="/kriger2.png"
+            alt="Kriger"
+            fill
+            priority
+            className="object-contain"   // <— viser hele bildet
+          />
+        </section>
         <div className="flex items-center gap-3">
           <span className="pill">MVP</span>
           <span className="pill">Dark</span>
@@ -70,17 +85,17 @@ export default function Page() {
 
               <label className="flex flex-col">
                 <span className="label">Alder</span>
-                <input className="input" type="number" value={profile.age} onChange={onNum("age")} />
+                <input className="input" type="number" value={profile.age} onChange={onNum("age")}/>
               </label>
 
               <label className="flex flex-col">
                 <span className="label">Høyde (cm)</span>
-                <input className="input" type="number" value={profile.heightCm} onChange={onNum("heightCm")} />
+                <input className="input" type="number" value={profile.heightCm} onChange={onNum("heightCm")}/>
               </label>
 
               <label className="flex flex-col">
                 <span className="label">Vekt (kg)</span>
-                <input className="input" type="number" value={profile.weightKg} onChange={onNum("weightKg")} />
+                <input className="input" type="number" value={profile.weightKg} onChange={onNum("weightKg")}/>
               </label>
 
               <label className="flex flex-col">
@@ -94,7 +109,8 @@ export default function Page() {
 
               <label className="flex flex-col">
                 <span className="label">Aktivitetsfaktor (jobb/NEAT)</span>
-                <input className="input" type="number" step="0.05" value={profile.activityFactor} onChange={onNum("activityFactor")} />
+                <input className="input" type="number" step="0.05" value={profile.activityFactor}
+                       onChange={onNum("activityFactor")}/>
               </label>
             </div>
           </div>
@@ -111,7 +127,7 @@ export default function Page() {
                 <option value="mixed">Mixed</option>
                 <option value="mobility">Mobility</option>
               </select>
-              <input className="input" type="number" placeholder="Varighet (min)" id="dur" defaultValue={60} />
+              <input className="input" type="number" placeholder="Varighet (min)" id="dur" defaultValue={60}/>
               <select className="select" id="intensity" defaultValue="moderate">
                 <option value="low">Lav</option>
                 <option value="moderate">Moderat</option>
@@ -124,13 +140,16 @@ export default function Page() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTime(e.target.value)}
               />
               <button
-                className="btn"
+                className="btn btn--dark"
                 onClick={() => {
                   const type = (document.getElementById("type") as HTMLSelectElement).value as TrainingSession["type"];
                   const durationMin = Number((document.getElementById("dur") as HTMLInputElement).value);
                   const intensity = (document.getElementById("intensity") as HTMLSelectElement).value as TrainingSession["intensity"];
-                  const s = sessionSchema.safeParse({ type, durationMin, intensity, time });
-                  if (!s.success) { alert("Ugyldig økt"); return; }
+                  const s = sessionSchema.safeParse({type, durationMin, intensity, time});
+                  if (!s.success) {
+                    alert("Ugyldig økt");
+                    return;
+                  }
                   setSessions((prev) => [...prev, s.data]);
                 }}
               >
@@ -146,13 +165,11 @@ export default function Page() {
                     <span className="pill mr-2">{s.time}</span>
                     <span className="k">{s.type}</span> — {s.durationMin} min — {s.intensity}
                   </span>
-                  <button
-                    className="btn-ghost"
-                    onClick={() => setSessions((prev) => prev.filter((_, idx) => idx !== i))}
-                    title="Fjern"
-                  >
-                    Fjern
-                  </button>
+                  <DeleteButton
+                    size="sm"
+                    onConfirm={() => setSessions((prev) => prev.filter((_, idx) => idx !== i))}
+                    label="Fjern"
+                  />
                 </li>
               ))}
             </ul>
@@ -165,11 +182,15 @@ export default function Page() {
         <div className="flex items-center gap-3">
           <button
             disabled={isPending}
-            className="btn"
+            className="btn btn--dark"
+            data-glow="true"
             onClick={() => {
               const p = profileSchema.safeParse(profile);
-              if (!p.success) { alert("Ugyldig profil"); return; }
-              calc({ profile: p.data, sessions });
+              if (!p.success) {
+                alert("Ugyldig profil");
+                return;
+              }
+              calc({profile: p.data, sessions});
             }}
           >
             {isPending ? "Beregner..." : "Beregn mål"}
@@ -197,7 +218,8 @@ export default function Page() {
                 <ul className="list text-sm">
                   {result.mealTiming.map((m, i) => (
                     <li key={i} className="py-3">
-                      <span className="k">{m.label}</span>: Protein {m.proteinPct}% • Karb {m.carbsPct}% • Fett {m.fatPct}%
+                      <span className="k">{m.label}</span>: Protein {m.proteinPct}% • Karb {m.carbsPct}% •
+                      Fett {m.fatPct}%
                     </li>
                   ))}
                 </ul>

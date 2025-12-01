@@ -1,72 +1,156 @@
+/* ===== src/app/globals.css — legg til/erstatt disse blokkene ===== */
 @import "tailwindcss";
 
-/* ---- Design tokens ---- */
+/* Tokens */
 @theme {
-    --color-background: #0b0c10;
+    --color-background: #0a0b0f;
     --color-foreground: #e5e7eb;
-    --color-muted: #9ca3af;
-    --color-card: #111217;
-    --color-card-border: #20222b;
-    --color-accent: #6ee7ff;
-    --color-accent-2: #8b5cf6;
+    --color-muted: #9aa0aa;
+    --color-card: #0f1117;
+    --color-card-border: #1b1f2a;
+    --color-primary-1: #0ea5e9; /* cyan-500 */
+    --color-primary-2: #8b5cf6; /* violet-500 */
     --radius-card: 1rem;
 }
 
-/* Base colors */
+/* Base */
 .bg-background { background-color: var(--color-background); }
 .text-foreground { color: var(--color-foreground); }
 
-/* Subtle grid / glow background */
+/* Dekor */
 .bg-grid {
     background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(139,92,246,.12), transparent 60%),
-        radial-gradient(1000px 500px at 90% 0%, rgba(110,231,255,.12), transparent 55%),
-        linear-gradient(to bottom, rgba(255,255,255,.03), rgba(255,255,255,0) 15%),
+        radial-gradient(1200px 600px at 10% -10%, rgba(139,92,246,.10), transparent 60%),
+        radial-gradient(1000px 500px at 90% 0%, rgba(14,165,233,.10), transparent 55%),
+        linear-gradient(to bottom, rgba(255,255,255,.02), rgba(255,255,255,0) 15%),
         repeating-linear-gradient(to right, rgba(255,255,255,.04) 0 1px, transparent 1px 80px),
         repeating-linear-gradient(to bottom, rgba(255,255,255,.04) 0 1px, transparent 1px 80px);
 }
 
-/* Utilities */
+/* Layout utils */
 .container { @apply mx-auto max-w-6xl px-4 md:px-6; }
-.card { @apply rounded-[--radius-card] border border-[var(--color-card-border)] bg-[var(--color-card)]/80 backdrop-blur shadow; }
+.section { @apply space-y-4; }
+.h1 { @apply text-3xl md:text-4xl font-semibold tracking-tight; }
+.h2 { @apply text-lg font-medium tracking-tight text-[var(--color-foreground)]; }
+.lead { @apply text-sm text-[var(--color-muted)]; }
+
+/* Cards – glass + gradient border on hover */
+.card {
+    position: relative;
+    border-radius: var(--radius-card);
+    background: color-mix(in oklab, var(--color-card) 92%, transparent);
+    border: 1px solid var(--color-card-border);
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.card::before {
+    /* gradient ring */
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px; pointer-events: none;
+    background: linear-gradient(120deg, rgba(14,165,233,.35), rgba(139,92,246,.35));
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: .0; transition: opacity .35s ease;
+}
+.card:hover::before { opacity: .9; }
 .card-body { @apply p-4 md:p-5; }
 
+/* Inputs */
 .input {
     @apply w-full rounded-lg border border-[var(--color-card-border)]
     bg-[#0f1117] px-3 py-2 text-[var(--color-foreground)]
-    placeholder-[var(--color-muted)]
-    outline-none transition;
+    placeholder-[var(--color-muted)] outline-none transition;
 }
-.input:focus { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-accent) 50%, transparent); }
-
-/* ⬇️ VIKTIG: Ikke @apply .input (custom class) – bruk utilities direkte */
+.input:focus { box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary-1) 50%, transparent); }
 .select {
     @apply w-full rounded-lg border border-[var(--color-card-border)]
     bg-[#0f1117] px-3 py-2 text-[var(--color-foreground)]
     outline-none transition appearance-none pr-8 bg-no-repeat bg-right;
 }
 .label { @apply text-sm text-[var(--color-muted)] mb-1; }
+.list { @apply divide-y divide-[var(--color-card-border)]; }
+.pill { @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs; border-color: var(--color-card-border); color: var(--color-muted); }
+.k { @apply font-semibold text-[var(--color-foreground)]; }
 
-.btn {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium transition;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
-    color: #0b0c10;
-    box-shadow: 0 6px 18px rgba(110, 231, 255, 0.2);
+/* ===== Buttons ===== */
+
+/* Glow animasjon */
+@keyframes glowPulse {
+    0%,100% { box-shadow: 0 0 0 rgba(0,0,0,0); }
+    50%     { box-shadow: 0 0 32px 8px color-mix(in oklab, var(--color-primary-1) 25%, transparent); }
 }
-.btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
-.btn:disabled { @apply opacity-60 cursor-not-allowed; }
 
-.btn-ghost {
-    @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm transition border;
+/* Base btn */
+.btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium transition select-none;
+    position: relative; overflow: hidden;
+}
+
+/* Mørk, “mektig” variant */
+.btn--dark {
+    color: #e7f5ff;
+    background:
+        radial-gradient(120% 120% at 0% 0%, color-mix(in oklab, var(--color-primary-1) 20%, #0a0b0f) 0%, transparent 50%),
+        linear-gradient(135deg, #0b1320, #141a29 60%, #0b1320);
+    border: 1px solid #1d2433;
+}
+.btn--dark::after {
+    /* bevegelig neon-stripe */
+    content: "";
+    position: absolute; inset: -1px;
+    background: conic-gradient(from 0deg,
+    transparent 0 10%, rgba(110,231,255,.35) 10% 20%, transparent 20% 40%,
+    rgba(139,92,246,.35) 40% 50%, transparent 50% 100%);
+    filter: blur(12px); opacity: .0; transition: opacity .35s ease, transform .35s ease;
+}
+.btn--dark:hover::after { opacity: .7; transform: rotate(8deg); }
+.btn--dark:hover { transform: translateY(-1px); }
+.btn--dark:active { transform: translateY(0); }
+.btn--dark[data-glow="true"] { animation: glowPulse 1.8s ease-in-out 1; }
+
+/* Outline/ghost */
+.btn--ghost {
+    @apply border text-sm;
     border-color: var(--color-card-border);
     color: var(--color-foreground);
     background: #0f1117;
 }
-.btn-ghost:hover { background: #141826; }
+.btn--ghost:hover { background: #141826; }
 
-.pill { @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs;
-    border-color: var(--color-card-border); color: var(--color-muted);
+/* Ikon-knapp base (rund) */
+.icon-btn {
+    @apply inline-flex items-center justify-center rounded-xl transition;
+    width: 40px; height: 40px;
+    border: 1px solid var(--color-card-border);
+    background: #0f1117;
+    color: var(--color-foreground);
 }
-.list { @apply divide-y divide-[var(--color-card-border)]; }
-.k { @apply font-semibold text-[var(--color-foreground)]; }
+.icon-btn:hover { background: #141826; }
+
+/* Destructive variant – mørk med neon-rød hover */
+.btn--danger {
+    @apply inline-flex items-center gap-2 rounded-xl px-3 py-2 font-medium transition;
+    border: 1px solid #2a1420;
+    color: #ffdfe3;
+    background:
+        radial-gradient(120% 120% at 0% 0%, rgba(239,68,68,.20) 0%, transparent 50%),
+        linear-gradient(135deg, #1a0f14, #1d1216 60%, #1a0f14);
+    position: relative; overflow: hidden;
+}
+.btn--danger::after {
+    content: "";
+    position: absolute; inset: -1px; pointer-events: none;
+    background: conic-gradient(from 0deg,
+    transparent 0 15%, rgba(239,68,68,.35) 15% 30%, transparent 30% 60%,
+    rgba(249,115,22,.25) 60% 70%, transparent 70% 100%);
+    filter: blur(12px); opacity: 0; transition: opacity .35s ease, transform .35s ease;
+}
+.btn--danger:hover::after { opacity: .75; transform: rotate(10deg); }
+.btn--danger:hover { transform: translateY(-1px); }
+.btn--danger:active { transform: translateY(0); }
+
+/* Liten versjon */
+.btn--danger.sm { @apply px-2 py-1 text-sm rounded-lg; }

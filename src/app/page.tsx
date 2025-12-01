@@ -120,27 +120,31 @@ export default function Page() {
         <div className="card">
           <div className="card-body space-y-4">
             <h2 className="h2">Dagens økter</h2>
-            <div className="grid md:grid-cols-5 gap-3">
-              <select className="select" id="type" defaultValue="strength">
+            <div className="flex flex-wrap items-center gap-3">
+              <select className="select field" id="type" defaultValue="strength">
                 <option value="strength">Styrke</option>
                 <option value="endurance">Kondisjon</option>
                 <option value="mixed">Mixed</option>
                 <option value="mobility">Mobility</option>
               </select>
-              <input className="input" type="number" placeholder="Varighet (min)" id="dur" defaultValue={60}/>
-              <select className="select" id="intensity" defaultValue="moderate">
+
+              <input className="input field" type="number" placeholder="Varighet (min)" id="dur" defaultValue={60}/>
+
+              <select className="select field" id="intensity" defaultValue="moderate">
                 <option value="low">Lav</option>
                 <option value="moderate">Moderat</option>
                 <option value="high">Høy</option>
               </select>
+
               <input
-                className="input"
+                className="input field--time"
                 type="time"
                 value={time}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTime(e.target.value)}
               />
+
               <button
-                className="btn btn--dark"
+                className="btn btn--dark field--btn"
                 onClick={() => {
                   const type = (document.getElementById("type") as HTMLSelectElement).value as TrainingSession["type"];
                   const durationMin = Number((document.getElementById("dur") as HTMLInputElement).value);
@@ -156,7 +160,6 @@ export default function Page() {
                 Legg til økt
               </button>
             </div>
-
             <ul className="list text-sm">
               {sessions.length === 0 && <li className="py-3 text-[var(--color-muted)]">Ingen økter lagt til.</li>}
               {sessions.map((s, i) => (

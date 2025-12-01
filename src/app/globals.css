@@ -154,3 +154,9 @@
 
 /* Liten versjon */
 .btn--danger.sm { @apply px-2 py-1 text-sm rounded-lg; }
+
+
+/* felt-bredde helpers */
+.field       { @apply min-w-[140px] flex-1; }   /* vokser, men ikke under 140px */
+.field--time { @apply min-w-[130px] flex-none; }/* tid holder fast bredde */
+.field--btn  { @apply flex-none; }              /* knapp krymper ikke */
